@@ -11,9 +11,7 @@ def adder(a,b):
         int: 
     """
     while b != 0:
-        carry = a & b   # count of logical AND for each bit in a and b (1010 & 0101 = 0)
+        carry = a & b   # count of logical AND for each bit in a and b (eq. 1010 & 0101 = 0)
         a = a ^ b       # XOR for bits in a and b
         b = carry << 1  # assign 2*carry to b
     return a
-
-print(adder(3,5))
