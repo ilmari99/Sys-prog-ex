@@ -1,0 +1,47 @@
+This program, scheduler.py, allows you to see how different sched ulers perform under scheduling metrics such as response time, turnaround time, and total wait time. See the README for details. Vastaa näihin kysymyksiin:
+
+1. Compute the response time and turnaround time when running three jobs of length 200 with the SJF and FIFO schedulers.
+
+FIFO: scheduler.py -c -p FIFO -j 3 -l 200,200,200
+SJF: scheduler.py -c -p SJF -j 3 -l 200,200,200
+WITH FIFO and SJF:
+Final statistics:
+  Job   0 -- Response: 0.00  Turnaround 200.00  Wait 0.00
+  Job   1 -- Response: 200.00  Turnaround 400.00  Wait 200.00
+  Job   2 -- Response: 400.00  Turnaround 600.00  Wait 400.00
+
+  Average -- Response: 200.00  Turnaround 400.00  Wait 200.00
+
+
+2. Now do the same but with jobs of different lengths: 100, 200, and 300.
+FIFO: scheduler.py -c -p FIFO -j 3 -l 100,200,300
+SJF: scheduler.py -c -p SJF -j 3 -l 100,200,300
+WITH FIFO and SJF:
+Final statistics:
+  Job   0 -- Response: 0.00  Turnaround 100.00  Wait 0.00
+  Job   1 -- Response: 100.00  Turnaround 300.00  Wait 100.00
+  Job   2 -- Response: 300.00  Turnaround 600.00  Wait 300.00
+
+  Average -- Response: 133.33  Turnaround 333.33  Wait 133.33
+
+3. Now do the same, but also with the RR scheduler and a time-slice of 1.
+RR: scheduler.py -c -p RR -q 1 -j 3 -l 100,200,300
+WITH RR:
+Final statistics:
+  Job   0 -- Response: 0.00  Turnaround 298.00  Wait 198.00
+  Job   1 -- Response: 1.00  Turnaround 499.00  Wait 299.00
+  Job   2 -- Response: 2.00  Turnaround 600.00  Wait 300.00
+
+  Average -- Response: 1.00  Turnaround 465.67  Wait 265.67
+
+
+
+4. For what types of workloads does SJF deliver the same turnaround times as FIFO?
+SJF has the same turnaround time as FIFO, when all jobs are of the same size, or they are sorted in increasing order
+
+5. For what types of workloads and quantum lengths does SJF deliver the same response times as RR?
+SJF only has the same response time as rr, when the jobs are shorter than the quantum lengths.
+
+6. What happens to response time with SJF as job lengths increase? Can you use the simulator to demonstrate the trend?
+Since SJF runs the entire job everytime (in incresing length)
+the response time is the sum of lengths of smaller jobs.
