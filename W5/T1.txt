@@ -1,0 +1,15 @@
+Bug Hunter's Diaryssa löydettiin haavoittuvuus VLC ohjelmasta.
+Haavoittuvuus löydettiin seuraamalla (TiVo muotoisen) video tiedoston lukua lähdekoodissa.
+Kirjoittaja seurasi datan erottelevia funktioita (demux) ja etsi ohjelmointi virheitä.
+Hän löysi mahdollisen Ylivuoto ongelman, jota pystyi hyödyntämään muokkaamalla
+TiVo tiedostoa, kaataen VLC ohjelman, ja saaden siten kontrollin EIP rekisteristä.
+Tämä mahdollistaa minkä tahansa ohjeiden suorittamisen koneella. Jos sitten VLC:tä
+käytetään esim. internetin kautta, on mahdollista ajaa mitä tahansa koodia serverillä.
+
+
+Kyseessä on injektio hyökkäys. Se voi toimia monella tapaa, mutta kaikille on yhteistä se,
+että jonkunlaista omaa koodia ajetaan paikassa, jossa sen ei pitäisi olla mahdollista.
+
+Hyökkäys mahdollistaa paljon, riippuen miten haavoittuvuus on saavutettu, ja missä.
+Voidaan mm. muokata nettisivun toimintaa, kopioida yksityisiä tietoja, tai muuten vaan 
+riehua Serverillä.
