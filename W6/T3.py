@@ -41,10 +41,9 @@ def count_valids(f):
         count = tx.count("VALID")
     return count
 import random
-get_args = lambda a : "-s {} -c -n 100 -l {} -p 1g -a {}".format(random.randint(1,101),random.randint(0,a),a)
+get_args = lambda a : "-s {} -c -n 100 -l {}".format(random.randint(1,101),a)
 #as_ = [i for i in range(10,10**8,100000)]
-as_ = [i for i in range(10,10**8,100000)]
-print(as_)
+as_ = [i for i in range(1,1100,5)]
 file = "./tmp.txt"
 counts = []
 
@@ -53,8 +52,13 @@ for a in as_:
     args = get_args(a)
     run_reloc(args,file)
     counts.append(count_valids(file))
-    #os.remove(file)
+    os.remove(file)
     print(counts)
+fig,ax = plt.subplots()
+ax.set_ylabel("% of valid addressess")
+ax.set_xlabel("Limit value")
+ax.set_title("The percent of VALID virtual addresses generated with a set limit.")
+ax.grid(True)
 plt.plot(as_,counts)
 plt.show()
 
