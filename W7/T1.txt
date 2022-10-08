@@ -1,0 +1,5 @@
+Running "./vector-deadlock" with different arguments might cause the threads to deadlock, but from my testing it happens very rarely.
+I used the -d and -v flags, and multiple -n and -l combinations. The chance of deadlocking increases as either -l or -n is increased,
+since then the calls to get the lock are increased.
+
+If n=1, then there is no possibility for a deadlock.
