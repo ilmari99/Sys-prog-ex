@@ -1,5 +1,25 @@
+Task 1
+
 Running "./vector-deadlock" with different arguments might cause the threads to deadlock, but from my testing it happens very rarely.
 I used the -d and -v flags, and multiple -n and -l combinations. The chance of deadlocking increases as either -l or -n is increased,
 since then the calls to get the lock are increased.
 
 If n=1, then there is no possibility for a deadlock.
+-----------------------------------------
+Task 2
+
+The vector-global-order.c avoids a deadlock by always first
+locking the smaller vector.
+
+There is a special case when source and dest are equal, because
+if they are the same, you can only acquire the lock once.
+
+-n; -l;     time (s)
+2;  100000; 0.03
+2;  1000000;0.14
+20; 10000;  0.47
+32; 1000000:7.74
+
+When the -p flag is enabled, the execution time is still heavily
+correlated with the number of loops (-l). But only slightly
+correlated with the -n, because the threads are not waiting so much.
