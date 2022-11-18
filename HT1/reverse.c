@@ -38,7 +38,7 @@ signed long int find_line_start_from_current(FILE* fptr){
    ch = fgetc(fptr);
    fseek(fptr,-sizeof(char),SEEK_CUR);
    int ch_count = 1;
-   while (ch != '\n'){
+   while (ch != '\n' && ftell(fptr) > 0){
     // Goto previous character
     fseek(fptr,-sizeof(char),SEEK_CUR);
     //fprintf(stdout,"%c",ch);
@@ -69,11 +69,20 @@ void print_from_pos(FILE* fin, FILE* fout, long signed int start_offset){
     printf("First character of line: %c\n",ch);
     */
     //fprintf(fout,"Starting loop\n");
-    while (off_set != -start_offset || ch == '\0'){
+    while (off_set < -start_offset){
+	//fprintf(fout,"\nOffset: %li\n",off_set);
         //fseek(fin,off_set,SEEK_CUR);
         ch = fgetc(fin);
+	if (ch == '\0' || ch == EOF){
+		break;
+	}
+        if (off_set == 0 && ch != '\n'){
+		fprintf(fout,"\n");
+	}
         //fseek(fin,-sizeof(char),SEEK_CUR);
         fprintf(fout,"%c",ch);
+	fflush(fout);
+	//printf("%c",ch);
         off_set = off_set + sizeof(char);
         //printf("\n%li offset.\n",off_set);
     }
@@ -84,29 +93,32 @@ int main(int argc, char *argv[]){
     check_inputs(argc,argv);
     fprintf(stdout,"Program started\n");
     FILE* in_fptr = open_file(argv[1],"r");
-
     // If no file specified, print to stdout
     FILE* out_fptr = stdout;
     if (argc == 3){
         out_fptr = open_file(argv[2],"w");
     }
+    setbuf(out_fptr,NULL);
+    //printf("Initial ftell: %d",ftell(in_fptr));
     // Seek initial end of file
     fseek(in_fptr,0,SEEK_END);
+    int nchars = ftell(in_fptr)/sizeof(char);
     printf("%li characters in the file\n\n",ftell(in_fptr)/sizeof(char));
     long signed int l_start_offset = 0;
-
-    while ( ftell(in_fptr) > 0 ){
-        //printf("Current pos in main: %d", ftell(in_fptr));
+    int written_chars = 0;
+    while ( ftell(in_fptr) > 0 && written_chars < nchars ){
+        //printf("Current pos in main: %li\n", ftell(in_fptr));
         // Find the offset from current position, that starts the new line
         l_start_offset = find_line_start_from_current(in_fptr);
-
+	written_chars = written_chars - l_start_offset/sizeof(char);
+        //fprintf(out_fptr,"L start offset: %li",l_start_offset);
         // Print from curr_pos - offset to curr_pos
         print_from_pos(in_fptr,out_fptr,l_start_offset);
-
+	//printf("Written chars: %d",written_chars);
         // Seek a newline character, should be the character before current pos
         fseek(in_fptr,l_start_offset - sizeof(char),SEEK_CUR);
 
-        sleep(0.01);
+        sleep(0.1);
     }
     fclose(in_fptr);
     fclose(out_fptr);
