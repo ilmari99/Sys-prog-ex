@@ -91,7 +91,7 @@ void print_from_pos(FILE* fin, FILE* fout, long signed int start_offset){
 
 int main(int argc, char *argv[]){
     check_inputs(argc,argv);
-    fprintf(stdout,"Program started\n");
+    //fprintf(stdout,"Program started\n");
     FILE* in_fptr = open_file(argv[1],"r");
     // If no file specified, print to stdout
     FILE* out_fptr = stdout;
@@ -103,7 +103,7 @@ int main(int argc, char *argv[]){
     // Seek initial end of file
     fseek(in_fptr,0,SEEK_END);
     int nchars = ftell(in_fptr)/sizeof(char);
-    printf("%li characters in the file\n\n",ftell(in_fptr)/sizeof(char));
+    //printf("%li characters in the file\n\n",ftell(in_fptr)/sizeof(char));
     long signed int l_start_offset = 0;
     int written_chars = 0;
     while ( ftell(in_fptr) > 0 && written_chars < nchars ){
@@ -118,7 +118,7 @@ int main(int argc, char *argv[]){
         // Seek a newline character, should be the character before current pos
         fseek(in_fptr,l_start_offset - sizeof(char),SEEK_CUR);
 
-        sleep(0.1);
+        //sleep(0.1);
     }
     fclose(in_fptr);
     fclose(out_fptr);
