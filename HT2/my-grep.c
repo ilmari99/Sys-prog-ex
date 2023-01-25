@@ -1,37 +1,91 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+
+int grep_file(char *search, char *filename);
 
 /*My own implementation of a simple unix grep command.*/
 
 int main(int argc, char *argv[])
 {
-    FILE *fp;
-
+    // Check if no arguments are given
     if (argc == 1) {
         return 0;
     }
-    char *search = argv[1];
-    char *linebuf = NULL;
-    size_t linebuf_size = 0;
-    ssize_t line_size;
-    int found = 0;
-    int fno = 2;
-    while (fno < argc - 1) {
-        fp = fopen(argv[fno], "r");
-        if (fp == NULL) {
-            printf("my-grep: cannot open file\n");
-            return 1;
-        }
-        // Read each line of the file and print it if it contains the search string.
-        // The search string is the 1st argument.
-        // Lines can be arbitrarily long.
+    int nfiles = argc - 2;
+    char files[20][200];
+    // If no files are specified, use stdin
+    if (nfiles == 0) {
+        printf("Using stdin.\n");
+        strcpy(files[0], "stdin");
+        nfiles = 1;
+    }
 
-        while ((line_size = getline(&linebuf, &linebuf_size, fp)) != -1) {
-            if (strstr(linebuf, search) != NULL) {
-                printf("%s", linebuf);
-                found++;
-            }
-            printf("%s", linebuf);
+    // If files are specified, use them
+    else{
+        for (int i = 0; i < nfiles; i++) {
+            strcpy(files[i], argv[i + 2]);
+            //files[i] = argv[i + 2];
         }
     }
+    char* curr_file_name;
+    int found = 0;
+    int fno = 0;
+    int read_file_status;
+    char* pattern = argv[1];
+    printf("Searching for '%s' in %d files: \n", pattern, nfiles);
+    for(int i = 0; i < nfiles; i++){
+        printf("%s", files[i]);
+    }
+    printf("\n");
+    while (fno < nfiles) {
+        curr_file_name = files[fno];
+        read_file_status = grep_file(pattern, curr_file_name);
+        if (read_file_status == -1) {
+            return 1;
+        }
+        else if (read_file_status > 0) {
+            found = found + read_file_status;
+        }
+        fno++;
+    }
+    printf("Found %d matches\n", found);
+}
+
+int grep_file(char *search, char *filename)
+{
+    FILE *fp;
+    // If stdin is used, use stdin
+    if (strcmp(filename, "stdin") == 0) {
+        fp = stdin;
+    }
+    else{
+        fp = fopen(filename, "r");
+    }
+    if (fp == NULL) {
+        printf("my-grep: cannot open file\n");
+        return -1;
+    }
+
+    // Create variables for getline
+    char *linebuf;
+    size_t linebuf_size = 264;
+    size_t line_size;
+    int found = 0;
+
+    linebuf = (char*)malloc(linebuf_size * sizeof(char));
+    if (linebuf == NULL) {
+        perror("my-grep: cannot allocate memory\n");
+        return -1;
+    }
+    // Read line by line with getline
+    while ((line_size = getline(&linebuf, &linebuf_size, fp)) != -1) {
+        if (strstr(linebuf, search) != NULL) {
+            printf("%s", linebuf);
+            found++;
+        }
+    }
+    free(linebuf);
+    fclose(fp);
+    return found;
 }
