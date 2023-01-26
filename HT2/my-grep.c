@@ -70,7 +70,7 @@ int grep_file(char *search, char *filename)
     // Create variables for getline
     char *linebuf;
     size_t linebuf_size = 264;
-    size_t line_size;
+    int line_size;
     int found = 0;
 
     linebuf = (char*)malloc(linebuf_size * sizeof(char));
