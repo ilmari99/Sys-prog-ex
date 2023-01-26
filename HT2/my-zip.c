@@ -1,20 +1,46 @@
 #include <stdio.h>
+#include <string.h>
 
+int zip_file(char *filename);
 
 int main(int argc, char *argv[])
 {
-    // Do Run-legth encoding for the input file and print the result to stdout
+    // Do Run-length encoding for the input file and print the result to stdout
 
-    if (argc != 2) {
-        printf("Usage: my-zip <file>\n");
+    if (argc == 1) {
+        printf("my-unzip: file1 [file2 ...]\n");
         return 1;
     }
-    char* input_file_name = argv[1];
+    int nfiles = argc - 1;
+    char files[20][200];
+    // If no files are specified, use stdin
+    if (nfiles == 0) {
+        printf("Using stdin.\n");
+        strcpy(files[0], "stdin");
+        nfiles = 1;
+    }
 
+    // If files are specified, use them
+    else{
+        for (int i = 0; i < nfiles; i++) {
+            strcpy(files[i], argv[i + 1]);
+            //files[i] = argv[i + 2];
+        }
+    }
+    int exit_status;
+    for (int i = 0; i < nfiles; i++){
+        exit_status = zip_file(files[i]);
+        if (exit_status == 1){
+            return exit_status;
+        }
+    }
+}
+
+int zip_file(char* filename){
     FILE *fp;
-    fp = fopen(input_file_name, "r");
+    fp = fopen(filename, "r");
     if (fp == NULL) {
-        printf("Error opening file %s", input_file_name);
+        printf("Error opening file %s", filename);
         return 1;
     }
     char curr_char;
@@ -48,5 +74,6 @@ int main(int argc, char *argv[])
     fwrite(&count, 4, 1, stdout);
     fwrite(&rle_char, 1, 1, stdout);
     //fwrite(as_str, 5, 1, stdout);
+    fclose(fp);
     return 0;
 }
