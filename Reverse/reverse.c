@@ -103,18 +103,19 @@ int main(int argc, char *argv[]){
     // Seek initial end of file
     fseek(in_fptr,0,SEEK_END);
     int nchars = ftell(in_fptr)/sizeof(char);
-    //printf("%li characters in the file\n\n",ftell(in_fptr)/sizeof(char));
+    //printf("%d characters in the file\n\n",nchars);
     long signed int l_start_offset = 0;
     int written_chars = 0;
-    while ( ftell(in_fptr) > 0 && written_chars < nchars ){
+    while ( ftell(in_fptr) >= 0 && written_chars <= nchars ){
         //printf("Current pos in main: %li\n", ftell(in_fptr));
         // Find the offset from current position, that starts the new line
         l_start_offset = find_line_start_from_current(in_fptr);
-	written_chars = written_chars - l_start_offset/sizeof(char);
+        //printf("Offset: %li\n",l_start_offset);
+	    written_chars = written_chars - l_start_offset/sizeof(char);
         //fprintf(out_fptr,"L start offset: %li",l_start_offset);
         // Print from curr_pos - offset to curr_pos
         print_from_pos(in_fptr,out_fptr,l_start_offset);
-	//printf("Written chars: %d",written_chars);
+	    //printf("Written chars: %d",written_chars);
         // Seek a newline character, should be the character before current pos
         fseek(in_fptr,l_start_offset - sizeof(char),SEEK_CUR);
 
