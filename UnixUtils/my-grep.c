@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 int grep_file(char *search, char *filename);
 
@@ -10,6 +11,7 @@ int main(int argc, char *argv[])
 {
     // Check if no arguments are given
     if (argc == 1) {
+        printf("my-grep: searchterm [file ...]\n");
         return 0;
     }
     int nfiles = argc - 2;
@@ -33,9 +35,13 @@ int main(int argc, char *argv[])
     int fno = 0;
     int read_file_status;
     char* pattern = argv[1];
+    if (strlen(pattern) > 255) {
+        printf("my-grep: searchterm too long\n");
+        return 1;
+    }
     printf("Searching for '%s' in %d files: \n", pattern, nfiles);
     for(int i = 0; i < nfiles; i++){
-        printf("%s", files[i]);
+        printf("%s ", files[i]);
     }
     printf("\n");
     while (fno < nfiles) {
@@ -69,7 +75,7 @@ int grep_file(char *search, char *filename)
 
     // Create variables for getline
     char *linebuf;
-    size_t linebuf_size = 264;
+    size_t linebuf_size = 256;
     int line_size;
     int found = 0;
 
