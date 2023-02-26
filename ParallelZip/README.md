@@ -9,6 +9,7 @@ Usage:
     - `-s M` specifies the number of segments to use (defaults to the number of threads)
     - `in.txt` is the input file
     - `out.z` is the output file (defaults to stdout)
+    - Note: specify BOTH `-t` and `-s` or NEITHER
 
 - run `./my-unzip in.z [> out.txt]`
     - `in.z` is the input file
