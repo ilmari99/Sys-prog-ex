@@ -1,26 +1,3 @@
-LUT Editorial note:
-
-This programming case is from the course book project repository; all files and additions are available via repository page https://github.com/remzi-arpacidusseau/ostep-projects.
-
-
-
-To turn in your work, include a short summary of what you did and screenshots of functional versions of your utility programs to the document file, with the addition of public address to the repository, which contains your solution source code. No source code availability, or source code that does not compile equals failure.
-
-
-
-Otherwise the scoring is as follows:
-
--Everything submitted compiles and works at least on some level. (Required, 1 points)
-
--The documentation is appropriate, correct and the repository is available (Required, 0 point)
-
--The documentation is detailed, and the provided source code is reasonably well commented. (1 point)
-
--all additional assumptions (1 point) and errors mentioned are addressed (2 points)
-
-----------------------------------------------
-
-
 This project is a simple warm-up to get you used to how this whole project thing will go. It also serves to get you into the mindset of a C programmer, something you will become quite familiar with over the next few months. Good luck!
 
 You will write a simple program called reverse. This program should be invoked in one of the following ways:
