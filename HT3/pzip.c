@@ -3,12 +3,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <ctype.h>
 #include <sys/types.h>
 #include <sys/sysinfo.h>
 #include <sys/stat.h>
-
-void* zip_segment(void* arg);
-int zip_file(char* filename, int num_threads, int num_segments);
 
 typedef struct {
     char* filename;
@@ -26,11 +24,21 @@ typedef struct {
     int capacity;
 } Queue;
 
-pthread_mutex_t queue_mutex;
-Queue* job_queue = NULL;
+void* zip_segment(ThreadArgs* args);
+int zip_file(char* filename, int num_threads, int num_segments);
+void* worker();
 
-// Function to create a new queue
+Queue* create_queue(int capacity);
+void add_to_queue(Queue* queue, ThreadArgs element);
+ThreadArgs pop_from_queue(Queue* queue);
+void free_queue(Queue* queue);
+
+pthread_mutex_t queue_mutex = PTHREAD_MUTEX_INITIALIZER;
+Queue* job_queue = NULL;
+int done_segments[100] = {0};
+
 Queue* create_queue(int capacity) {
+    // Function to create a new queue
     Queue* queue = (Queue*) malloc(sizeof(Queue));
     queue->elements = (ThreadArgs*) malloc(capacity * sizeof(ThreadArgs));
     queue->front = 0;
@@ -40,8 +48,8 @@ Queue* create_queue(int capacity) {
     return queue;
 }
 
-// Function to add an element to the queue
 void add_to_queue(Queue* queue, ThreadArgs element) {
+    // Function to add an element to a queue
     if (queue->size == queue->capacity) {
         printf("Queue is full. Unable to add element.\n");
         return;
@@ -51,10 +59,10 @@ void add_to_queue(Queue* queue, ThreadArgs element) {
     queue->size++;
 }
 
-// Function to remove and return the front element from the queue
 ThreadArgs pop_from_queue(Queue* queue) {
+    // Function to remove and return the front element from the queue
     if (queue->size == 0) {
-        printf("Queue is empty. Unable to remove element.\n");
+        //printf("Queue is empty. Unable to remove element.\n");
         ThreadArgs null_element = {NULL, NULL, 0, 0};
         return null_element;
     }
@@ -70,13 +78,15 @@ void free_queue(Queue* queue) {
 }
 
 
-void* zip_segment(void* arg) {
+void* zip_segment(ThreadArgs* args) {
     /* A function, that takes in a ThreadArgs struct and writes the RLE of the text in it to the ThreadArgs tmpfile. */
-    ThreadArgs* args = (ThreadArgs*) arg;
+    //ThreadArgs* args = (ThreadArgs*) arg;
     char* filename = args->filename;
     char* tmpfile = args->tmpfile;
     int start = args->start;
     int end = args->end;
+
+    //printf("Zipping from: %d, %d\n", start, end);
     
     FILE* fp = fopen(filename, "r");
     if (fp == NULL) {
@@ -89,8 +99,9 @@ void* zip_segment(void* arg) {
         printf("Error opening file %s", tmpfile);
         return NULL;
     }
-    
-    fseek(fp, start, SEEK_SET);
+    if (start > 0){
+        fseek(fp, start, SEEK_SET);
+    }
 
     char curr_char;
     int count = 0;
@@ -109,7 +120,17 @@ void* zip_segment(void* arg) {
             count = 1;
         }
     }
-
+    /*
+    if (ftell(fp) >= end) {
+        printf("Reached end of segment.\n Pos: %ld, end: %d\n", ftell(fp), end);
+    }
+    else if (curr_char == EOF) {
+        printf("Reached end of file.\n");
+    }
+    else{
+        printf("Something went wrong.\n");
+    }
+    */
     if (count > 0) {
         fwrite(&count, 4, 1, fpout);
         fwrite(&rle_char, 1, 1, fpout);
@@ -117,7 +138,6 @@ void* zip_segment(void* arg) {
 
     fclose(fp);
     fclose(fpout);
-    //printf("Finished thread %s\n", tmpfile);
     return NULL;
 }
 
@@ -139,7 +159,23 @@ void* worker() {
         pthread_mutex_unlock(&queue_mutex);
         // Run the job
         zip_segment(&job);
-
+        char last_char_index;
+        // Find the last character in the filename, the remaining characters are the index
+        for (int i = 0; i < (int) strlen(job.tmpfile); i++) {
+            if (isdigit(job.tmpfile[i])) {
+                last_char_index = i-1;
+                break;
+            }
+        }
+        // Get the index of the file, the nth segment
+        char index[10];
+        for (int i = 0; i < (int) strlen(job.tmpfile) - last_char_index; i++) {
+            index[i] = job.tmpfile[last_char_index + i + 1];
+        }
+        int nsegment = atoi(index);
+        //printf("Done segment %d\n", nsegment);
+        // Mark the segment as done
+        done_segments[nsegment] = 1;
     }
 }
 
@@ -177,6 +213,8 @@ int zip_file(char* filename, int num_threads, int num_segments) {
         sprintf(tmpfiles[i], "./tmp-pzip/tmpfile%d", i);
         thread_args.tmpfile = tmpfiles[i];
         add_to_queue(job_queue, thread_args);
+        //printf("Added job %s to queue\n", tmpfiles[i]);
+        //printf("Start, end: %d, %d\n", thread_args.start, thread_args.end);
     }
 
     // Allocate the threads
@@ -190,36 +228,47 @@ int zip_file(char* filename, int num_threads, int num_segments) {
     // Merge the temporary files in order
     int file_index = 0;
     while(file_index < num_segments){
-        if (access(tmpfiles[file_index], F_OK) == -1) {
-            usleep(10000);
+        if (done_segments[file_index] == 0) {
+            //printf("Waiting for file %s\n", tmpfiles[file_index]);
             continue;
         }
+        //printf("Merging file %s\n", tmpfiles[file_index]);
         //printf("Merging file %s\n", tmpfiles[file_index]);
         FILE* fpin = fopen(tmpfiles[file_index], "r");
         if (fpin == NULL) {
             printf("Error opening file %s", tmpfiles[file_index]);
             return 1;
         }
+
         int count;
         char rle_char;
-        while (fread(&count, 4, 1, fpin) > 0) {
+        while (fread(&count, 4, 1, fpin) != 0) {
+            //printf("Count: %d\n", count);
             fread(&rle_char, 1, 1, fpin);
+            //printf("Char: %c\n", rle_char);
             fwrite(&count, 4, 1, stdout);
             fwrite(&rle_char, 1, 1, stdout);
         }
+        
+        
+       /*
+       char c;
+       c = fgetc(fpin);
+       while(c != EOF){
+            fputc(c, stdout);
+            c = fgetc(fpin);
+       }
+    */
         fclose(fpin);
         remove(tmpfiles[file_index]);
-        file_index++;
-        
+        file_index++;  
     }
-
     /* Wait for all threads to finish
     for (int i = 0; i < num_threads; i++) {
         pthread_join(threads[i], NULL);
     }*/
 
 
-    free_queue(job_queue);
     free(threads);
     //fclose(fp);
     remove("./tmp-pzip");
@@ -236,27 +285,23 @@ int main(int argc, char *argv[])
     }
     int num_threads = -1;
     int num_segments = -1;
+    int reduce_from_nfiles = 0;
     // If the first argument is -t, get the number of threads
-    if (strcmp(argv[1], "-t") == 0) {
+    if (argc >= 3 && strcmp(argv[1], "-t") == 0) {
         num_threads = atoi(argv[2]);
+        reduce_from_nfiles = reduce_from_nfiles + 2;
     }
     // If the second argument is -s, get the number of segments
-    if (strcmp(argv[3], "-s") == 0) {
+    if (argc >= 5 && strcmp(argv[3], "-s") == 0) {
         num_segments = atoi(argv[4]);
-    }
-    // Check if number of threads and segments were given, and adjust the number of files accordingly
-    int reduce_from_nfiles = 0;
-    if (num_threads != -1){
-        reduce_from_nfiles = 2;
-    }
-    if (num_segments != -1){
-        reduce_from_nfiles = 4;
+        reduce_from_nfiles = reduce_from_nfiles + 2;
     }
 
     int nfiles = argc - 1 - reduce_from_nfiles;
+    //printf("nfiles: %d", nfiles);
     // If the number of threads or segments is not specified, use the default values
     if (num_threads == -1) {
-        num_threads = get_nprocs();
+        num_threads = get_nprocs() -1;
     }
     if (num_segments == -1) {
         num_segments = num_threads;
@@ -283,6 +328,11 @@ int main(int argc, char *argv[])
         if (exit_status == 1){
             return exit_status;
         }
+        //printf("Done with file %s\n", files[i]);
+        for (int i = 0; i < num_segments; i++){
+            done_segments[i] = 0;
+        }
     }
+    free_queue(job_queue);
     pthread_mutex_destroy(&queue_mutex);
 }
